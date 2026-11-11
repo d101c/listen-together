@@ -1,0 +1,38 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: listen-together\n"
+"Language: fr\n"
+"PO-Revision-Date: 2026-11-11 21:00+0100\n"
+"Last-Translator: d101c\n"
+"Language-Team: French\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: extension.js
+msgid "Share Audio"
+msgstr "Son partagé"
+
+#: extension.js
+msgid "Listen Together"
+msgstr "Écoute partagée"
+
+#: extension.js
+msgid "The same sound in every headset"
+msgstr "Le même son dans chaque casque"
+
+#: extension.js
+msgid "%d device"
+msgid_plural "%d devices"
+msgstr[0] "%d appareil"
+msgstr[1] "%d appareils"
+
+#: extension.js
+msgid "Delay"
+msgstr "Retard"
+
+#. Translators: a delay in milliseconds, e.g. "120 ms".
+#: extension.js
+msgid "%d ms"
+msgstr "%d ms"

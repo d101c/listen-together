@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.listen-together" path="/org/gnome/shell/extensions/listen-together/">
+    <key name="delays" type="a{si}">
+      <default>{}</default>
+      <summary>Delay of each device</summary>
+      <description>Extra delay in milliseconds, per Bluetooth output name, used to line devices up while sharing.</description>
+    </key>
+  </schema>
+</schemalist>

@@ -1,0 +1,5 @@
+*.zip
+extension/locale/
+tools/headless/env/
+tools/headless/out/
+extension/schemas/gschemas.compiled
