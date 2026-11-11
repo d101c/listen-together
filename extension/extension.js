@@ -61,7 +61,7 @@ class DeviceItem extends PopupMenu.PopupBaseMenuItem {
         box.add_child(delayRow);
         this._delayMs = clampDelay(delayMs);
         this._showDelay();
-        this._delaySlider.connect('notify::value', () => {
+        this._delaySliderId = this._delaySlider.connect('notify::value', () => {
             const ms = clampDelay(this._delaySlider.value * MAX_DELAY_MS);
             if (ms === this._delayMs)
                 return;
@@ -77,10 +77,15 @@ class DeviceItem extends PopupMenu.PopupBaseMenuItem {
             stream.connect('notify::is-muted', () => this._pull()),
         ];
         this._pull();
-        this.connect('destroy', () => {
-            for (const id of this._streamIds)
-                this._stream.disconnect(id);
-        });
+    }
+
+    destroy() {
+        for (const id of this._streamIds)
+            this._stream.disconnect(id);
+        this._streamIds = [];
+        this._slider.disconnect(this._sliderId);
+        this._delaySlider.disconnect(this._delaySliderId);
+        super.destroy();
     }
 
     _showDelay() {
@@ -140,14 +145,20 @@ class ShareToggle extends QuickSettings.QuickMenuToggle {
 
         this._sharing = new Sharing(control, confPath, () => this._sync());
         this._sharing.setDelays(this._delays);
-        this.connect('clicked', () => {
+        this._clickedId = this.connect('clicked', () => {
             if (this._sharing.active)
                 this._sharing.stop();
             else
                 this._sharing.start();
         });
-        this.connect('destroy', () => this._sharing.destroy());
         this._sync();
+    }
+
+    destroy() {
+        this.disconnect(this._clickedId);
+        // Stops sharing and disconnects from the mixer.
+        this._sharing.destroy();
+        super.destroy();
     }
 
     _setDelay(name, ms) {
@@ -201,13 +212,13 @@ export default class ListenTogether extends Extension {
         Main.panel.statusArea.quickSettings.addExternalIndicator(this._indicator);
     }
 
-    // The extension also runs on the lock screen (session-modes in
-    // metadata.json) so that locking the screen during a film does not cut
-    // the sound in one of the headsets. disable() is therefore only called
-    // when the extension is really turned off or the session ends: it stops
-    // sharing, which removes the shared output and puts back the output that
-    // was in use before.
     disable() {
+        // This extension also runs on the lock screen (unlock-dialog in
+        // session-modes): locking the screen during a film must not cut the
+        // sound in one of the headsets. disable() is therefore only called
+        // when the extension is really turned off or the session ends. It
+        // stops sharing, which removes the shared output and puts back the
+        // output that was in use before, and removes the tile.
         this._indicator?.destroy();
         this._indicator = null;
     }

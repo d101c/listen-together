@@ -18,5 +18,5 @@
   "settings-schema": "org.gnome.shell.extensions.listen-together",
   "gettext-domain": "listen-together",
   "url": "https://github.com/d101c/listen-together",
-  "version-name": "0.2"
+  "version-name": "0.3"
 }
