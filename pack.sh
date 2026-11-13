@@ -19,6 +19,7 @@ gnome-extensions pack "$SRC" \
   --extra-source=model.js \
   --extra-source=sharing.js \
   --extra-source=combine.conf \
+  --extra-source=LICENSE \
   --schema=schemas/org.gnome.shell.extensions.listen-together.gschema.xml \
   --podir=po \
   --gettext-domain="$DOMAIN" \
