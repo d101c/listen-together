@@ -1,23 +1,24 @@
-// The engine behind the tile. It has no GNOME Shell import (only Gio/GLib
-// and a Gvc.MixerControl handed in), so tests can drive it from plain gjs.
-//
-// Sharing on  = a `pipewire -c combine.conf` child process is alive; it adds
-//               the virtual output, which becomes the default output.
-// Sharing off = the process is stopped (the output disappears with it) and
-//               the output that was the default before is the default again.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// The engine behind the tile: no GNOME Shell import, so plain gjs can test it.
+// Sharing is on while a `pipewire -c combine.conf` child process is alive; the
+// virtual output it adds becomes the default output until the process stops.
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-import {SINK_NAME, isBluetoothSink, latencyOffsets} from './model.js';
+import {SINK_NAME, Coalescer, isBluetoothSink, latencyOffsets} from './model.js';
 
 const SIGTERM = 15;
 // The virtual output shows up well under a second after the process starts.
 const START_TIMEOUT_MS = 5000;
+// SIGTERM is normally enough; SIGKILL follows if pipewire is still there.
+const KILL_AFTER_MS = 2000;
+// The delay slider moves in 10 ms steps: pw-cli is run at most this often.
+const OFFSET_DELAY_MS = 150;
 
 export class Sharing {
     // onChanged() is called whenever `available`, `active` or `devices` may
     // have changed.
-    constructor(control, confPath, onChanged = () => {}) {
+    constructor(control, confPath, onChanged) {
         this._control = control;
         this._confPath = confPath;
         this._onChanged = onChanged;
@@ -30,6 +31,11 @@ export class Sharing {
         this._switched = false;
         this._previous = null;
         this._startTimeout = 0;
+        this._killTimeouts = new Map();
+        this._offsetsUpdate = new Coalescer(
+            fn => GLib.timeout_add(GLib.PRIORITY_DEFAULT, OFFSET_DELAY_MS, fn),
+            id => GLib.Source.remove(id),
+            () => this._applyOffsets());
         this._signals = [
             control.connect('state-changed', () => this._sync()),
             control.connect('stream-added', (_c, id) => this._streamAdded(id)),
@@ -55,7 +61,7 @@ export class Sharing {
     setDelays(delays) {
         this._delays = {...delays};
         if (this.active && this._switched)
-            this._applyOffsets();
+            this._offsetsUpdate.request();
     }
 
     start() {
@@ -74,11 +80,8 @@ export class Sharing {
         }
         this._proc = proc;
         proc.wait_async(null, (p, res) => {
-            try {
-                p.wait_finish(res);
-            } catch (_e) {
-                // Nothing to do: the process is gone either way.
-            }
+            p.wait_finish(res);
+            this._clearKill(p);
             // Only when it died on its own; stop() has already let go of it.
             if (this._proc === p)
                 this._stopped(true);
@@ -99,35 +102,52 @@ export class Sharing {
         this._onChanged();
     }
 
-    // restore=false leaves the default output alone: the user has just picked
-    // another one themselves.
+    // restore=false: the user picked another output, leave the default alone.
     stop(restore = true) {
         if (!this.active)
             return;
         const proc = this._proc;
         this._proc = null;
         proc.send_signal(SIGTERM);
+        this._killTimeouts.set(proc, GLib.timeout_add(GLib.PRIORITY_DEFAULT, KILL_AFTER_MS, () => {
+            this._killTimeouts.delete(proc);
+            proc.force_exit();
+            return GLib.SOURCE_REMOVE;
+        }));
         this._stopped(restore);
     }
 
     destroy() {
         this.stop();
+        // disable() must leave no source behind: only SIGTERM remains.
+        for (const id of this._killTimeouts.values())
+            GLib.Source.remove(id);
+        this._killTimeouts.clear();
+        this._offsetsUpdate.cancel();
         for (const id of this._signals)
             this._control.disconnect(id);
         this._signals = [];
-        this._onChanged = () => {};
+    }
+
+    _clearKill(proc) {
+        const id = this._killTimeouts.get(proc);
+        if (id !== undefined) {
+            GLib.Source.remove(id);
+            this._killTimeouts.delete(proc);
+        }
     }
 
     _stopped(restore) {
         this._proc = null;
         if (this._startTimeout) {
-            GLib.source_remove(this._startTimeout);
+            GLib.Source.remove(this._startTimeout);
             this._startTimeout = 0;
         }
         const previous = this._previous;
         const switched = this._switched;
         this._previous = null;
         this._switched = false;
+        this._offsetsUpdate.cancel();
         this._clearOffsets();
         if (restore && switched && previous) {
             const sink = this._findSink(previous);
