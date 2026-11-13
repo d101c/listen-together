@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 // gjs -m tests/model.test.js
 import {
     SINK_NAME, isBluetoothSink, canShare, volumeToFraction, fractionToVolume,
-    clampDelay, latencyOffsets,
+    clampDelay, latencyOffsets, Coalescer,
 } from '../extension/model.js';
 
 let failed = 0;
@@ -40,6 +41,28 @@ check('delaying one declares the other late', latencyOffsets({a: 120}, ['a', 'b'
 check('only the difference counts', latencyOffsets({a: 200, b: 50}, ['a', 'b']), {a: 0, b: 150000000});
 check('three devices', latencyOffsets({a: 100, c: 30}, ['a', 'b', 'c']), {a: 0, b: 100000000, c: 70000000});
 check('absent devices are ignored', latencyOffsets({gone: 400, a: 20}, ['a', 'b']), {a: 0, b: 20000000});
+
+// A fake timer: scheduled callbacks wait until tick() runs them.
+{
+    const timers = new Map();
+    let next = 1, runs = 0;
+    const c = new Coalescer(fn => { timers.set(next, fn); return next++; }, id => timers.delete(id), () => runs++);
+    for (let i = 0; i < 40; i++)
+        c.request();
+    check('many requests, one timer', timers.size, 1);
+    check('nothing runs before the timer', runs, 0);
+    const [[, fire]] = [...timers];
+    timers.clear();
+    fire();
+    check('the timer runs the action once', runs, 1);
+    c.request();
+    check('a new request after the run arms a new timer', timers.size, 1);
+    c.cancel();
+    check('cancel drops the pending timer', timers.size, 0);
+    c.cancel();
+    c.request();
+    check('requests work again after a cancel', timers.size, 1);
+}
 
 if (failed) {
     print(`${failed} test(s) failed`);

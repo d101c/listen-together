@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 // End-to-end test of the engine against the real PipeWire of the session,
 // with two silent fake headsets instead of real ones. Run through
 // tests/run.sh, which sets the paths gjs needs to load Gvc.

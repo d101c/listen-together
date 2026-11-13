@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 // Test driver for tools/headless/run.sh. It polls $PROBE_DIR/cmd, runs the
 // one command written there, then deletes the file:
 //   open | close      the Quick Settings menu

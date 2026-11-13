@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 // Listen Together: one Quick Settings tile that sends the sound to every
 // connected Bluetooth headset. The tile is only there while two or more are
 // connected, and nothing is added to the top bar.
@@ -29,8 +30,7 @@ class DeviceItem extends PopupMenu.PopupBaseMenuItem {
         this._onDelay = onDelay;
 
         const box = new St.BoxLayout({x_expand: true, style: 'spacing: 6px;'});
-        // Set on the layout manager: St.BoxLayout's own property was renamed
-        // (vertical -> orientation) in GNOME 48.
+        // Not St.BoxLayout's own property: it was renamed in GNOME 48.
         box.layout_manager.orientation = Clutter.Orientation.VERTICAL;
         box.add_child(new St.Label({text: stream.get_description() ?? stream.get_name()}));
 
@@ -39,7 +39,7 @@ class DeviceItem extends PopupMenu.PopupBaseMenuItem {
         row.add_child(this._icon);
         this._slider = new Slider(0);
         this._slider.x_expand = true;
-        this._slider.accessible_name = stream.get_description() ?? '';
+        this._slider.accessible_name = stream.get_description();
         row.add_child(this._slider);
         box.add_child(row);
 
@@ -108,7 +108,7 @@ class DeviceItem extends PopupMenu.PopupBaseMenuItem {
             this._stream.change_is_muted(false);
     }
 
-    // Headset -> slider (volume keys on the headset, the sound settings…).
+    // Headset -> slider (its own volume keys, the sound settings).
     _pull() {
         const fraction = this._stream.is_muted
             ? 0 : volumeToFraction(this._stream.volume, this._maxNorm());
@@ -127,8 +127,7 @@ const ShareToggle = GObject.registerClass(
 class ShareToggle extends QuickSettings.QuickMenuToggle {
     _init(control, confPath, settings) {
         super._init({
-            // Short on purpose: a tile with a menu arrow fits about eleven
-            // characters. The menu header carries the full name.
+            // Short: a tile with a menu arrow fits about eleven characters.
             title: _('Share Audio'),
             iconName: ICON,
             toggleMode: false,
@@ -213,12 +212,9 @@ export default class ListenTogether extends Extension {
     }
 
     disable() {
-        // This extension also runs on the lock screen (unlock-dialog in
-        // session-modes): locking the screen during a film must not cut the
-        // sound in one of the headsets. disable() is therefore only called
-        // when the extension is really turned off or the session ends. It
-        // stops sharing, which removes the shared output and puts back the
-        // output that was in use before, and removes the tile.
+        // unlock-dialog is in session-modes so that locking the screen during
+        // a film does not stop sharing; disable() then only runs when the
+        // extension is turned off or the session ends, and stops sharing.
         this._indicator?.destroy();
         this._indicator = null;
     }
