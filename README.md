@@ -84,6 +84,17 @@ the extension is disabled. Screenshots land in `tools/headless/out`.
 Not covered by the automated tests: real devices (dropouts, lip sync, and
 whether a delay is heard as set).
 
+## Roadmap and issues
+
+Bugs, ideas, planned work and things still to test are tracked in the
+[GitHub issues](https://github.com/d101c/listen-together/issues); what is planned for
+the next version is grouped in a milestone.
+
+- **Report a bug:** open an issue with your distribution, GNOME Shell version,
+  what you did, what you expected and what happened, plus any error shown by
+  `journalctl -b /usr/bin/gnome-shell`.
+- **Suggest an idea:** open an issue that describes what you want to do.
+
 ## Licence
 
 GPL-2.0-or-later.

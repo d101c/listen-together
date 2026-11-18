@@ -87,6 +87,18 @@ quand l'extension est désactivée. Les captures vont dans
 Non couvert par les tests automatiques : de vrais appareils (coupures,
 synchro image/son, et le fait qu'un retard s'entende comme réglé).
 
+## Feuille de route et tickets
+
+Défauts, idées, travail prévu et essais encore à faire sont suivis dans les
+[tickets GitHub](https://github.com/d101c/listen-together/issues) ; ce qui est
+prévu pour la prochaine version est regroupé dans un jalon (milestone).
+
+- **Signaler un défaut :** ouvrez un ticket avec votre distribution, votre
+  version de GNOME Shell, ce que vous avez fait, ce que vous attendiez et ce
+  qui s'est passé, avec les erreurs affichées par
+  `journalctl -b /usr/bin/gnome-shell`.
+- **Proposer une idée :** ouvrez un ticket qui décrit ce que vous voulez faire.
+
 ## Licence
 
 GPL-2.0-or-later.
